@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const userModel = require('../models/user.model');
+const userService = require('../services/user.service');
 
 
 module.exports.registerUser = async (req, res, next) => {
@@ -98,10 +99,35 @@ module.exports.getUserById = async (req, res, next) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        return res.status(200).json({ success: true, data: user });
+        return res.status(200).json({ success: true, message: "User fetched successfully", data: user });
     } catch (error) {
         console.error('error: ', error);
         return res.status(500).json({ message: "Internal server error" })
     }
 }
 
+
+module.exports.updateUserById = async (req, res, next) => {
+    try {
+        const id = req.user.id;
+        const reqBody = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'User id required' });
+        }
+
+        const user = await userModel.findById(id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const result = await userService.updateUserData(id, reqBody)
+
+        return res.status(200).json({ success: true, message: "User updated successfully", data: result });
+
+    } catch (error) {
+        console.error('error: ', error);
+        return res.status(500).json({ message: "Internal server error" })
+    }
+}

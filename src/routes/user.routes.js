@@ -8,5 +8,6 @@ router.post('/register', userValidation.registerValidation, userController.regis
 router.post('/login', userValidation.loginValidation, userController.loginUser)
 router.get('/profile', middleware.isAuthorized, userController.getUserProfile)
 router.get('/:id', middleware.isAuthorized, userController.getUserById)
+router.put('/update', middleware.isAuthorized, userValidation.registerValidation, userController.updateUserById)
 
 module.exports = router;
