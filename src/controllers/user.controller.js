@@ -15,7 +15,7 @@ module.exports.registerUser = async (req, res, next) => {
 
         const { username, email, phone, password, bio } = req.body;
 
-        const isUserExist = await userModel.findOne({ email })
+        const isUserExist = await userModel.findOne({ email, deletedAt: null });
 
         if (isUserExist) {
             return res.status(409).json({ message: "User already exist" })
@@ -47,7 +47,7 @@ module.exports.loginUser = async (req, res, next) => {
 
         const { email, password } = req.body;
 
-        const user = await userModel.findOne({ email }).select('+password')
+        const user = await userModel.findOne({ email, deletedAt: null }).select('+password')
 
         if (!user) {
             return res.status(404).json({ message: "User not found" })
@@ -117,7 +117,7 @@ module.exports.updateUserById = async (req, res, next) => {
             return res.status(400).json({ message: 'User id required' });
         }
 
-        const user = await userModel.findById(id);
+        const user = await userModel.findOne({ _id: id, deletedAt: null });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -140,13 +140,14 @@ module.exports.getAllUsers = async (req, res, next) => {
         const search = req.query.search || '';
         const sort = req.query.sort || '-createdAt';
 
+        const filter = { deletedAt: null };
 
-        const filter = search ? {
-            $or: [
+        if (search) {
+            filter.$or = [
                 { username: { $regex: search, $options: 'i' } },
                 { email: { $regex: search, $options: 'i' } }
-            ]
-        } : {};
+            ];
+        }
 
         const skip = (page - 1) * pageSize;
 
@@ -155,6 +156,30 @@ module.exports.getAllUsers = async (req, res, next) => {
         const paginationInfo = await paginationService.getPaginationData(page, pageSize, totalRecords)
 
         return res.status(200).json({ success: true, message: "User fetched successfully", data: { paginationInfo, userRecords } });
+    } catch (error) {
+        console.error('error: ', error);
+        return res.status(500).json({ message: "Internal server error" })
+    }
+}
+
+module.exports.deleteUserById = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({ message: 'User id required' });
+        }
+
+        const user = await userModel.findOne({ _id: id, deletedAt: null });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const result = await userService.softDeleteUser(id);
+
+        return res.status(200).json({ message: "user deleted successfully" })
+
     } catch (error) {
         console.error('error: ', error);
         return res.status(500).json({ message: "Internal server error" })

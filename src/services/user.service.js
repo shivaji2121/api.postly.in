@@ -25,10 +25,27 @@ module.exports.updateUserData = async (userId, userData) => {
 }
 
 module.exports.getRecords = async (filter, sort, skip, pageSize) => {
-    const userRecords = await userModel.find(filter).sort(sort).skip(skip).limit(pageSize).lean();
+    const userRecords = await userModel.find(filter).select('-posts -comments').sort(sort).skip(skip).limit(pageSize).lean();
 
     const totalRecords = await userModel.countDocuments(filter);
 
     return { userRecords, totalRecords }
 };
 
+
+
+module.exports.softDeleteUser = async (userId) => {
+    try {
+
+        if (!userId) {
+            throw new Error("User ID are required")
+        }
+
+        const result = await userModel.findByIdAndUpdate(userId, { deletedAt: new Date() }, { new: true });
+
+        return result;
+    } catch (error) {
+        console.error('user service softDelete: ', error);
+        throw error;
+    }
+}

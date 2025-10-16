@@ -11,7 +11,7 @@ module.exports.isAuthorized = async (req, res, next) => {
 
         const userData = jwt.verify(token, process.env.JWT_SECRET);
 
-        const user = await userModel.findById(userData._id);
+        const user = await userModel.findOne({ _id: userData._id, deletedAt: null })
 
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized - User not found' });

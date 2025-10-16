@@ -49,7 +49,11 @@ const userSchema = new mongoose.Schema({
     comments: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Comment"
-    }]
+    }],
+    deletedAt: {
+        type: Date,
+        default: null
+    },
 
 },
     { timestamps: true }
