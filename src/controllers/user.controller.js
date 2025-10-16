@@ -4,7 +4,7 @@ const userService = require('../services/user.service');
 const paginationService = require('../helpers/pagination.helper');
 
 
-module.exports.registerUser = async (req, res, next) => {
+const registerUser = async (req, res, next) => {
     try {
 
         const errors = validationResult(req);
@@ -37,7 +37,7 @@ module.exports.registerUser = async (req, res, next) => {
     }
 }
 
-module.exports.loginUser = async (req, res, next) => {
+const loginUser = async (req, res, next) => {
     try {
         const errors = validationResult(req);
 
@@ -69,8 +69,7 @@ module.exports.loginUser = async (req, res, next) => {
         return res.status(500).json({ message: "Internal server error" })
     }
 }
-
-module.exports.getUserProfile = async (req, res, next) => {
+const getUserProfile = async (req, res, next) => {
     try {
         const user = req.user;
 
@@ -86,7 +85,7 @@ module.exports.getUserProfile = async (req, res, next) => {
 }
 
 
-module.exports.getUserById = async (req, res, next) => {
+const getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -108,8 +107,15 @@ module.exports.getUserById = async (req, res, next) => {
 }
 
 
-module.exports.updateUserById = async (req, res, next) => {
+const updateUserById = async (req, res, next) => {
     try {
+
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
         const id = req.user.id;
         const reqBody = req.body;
 
@@ -133,7 +139,7 @@ module.exports.updateUserById = async (req, res, next) => {
     }
 }
 
-module.exports.getAllUsers = async (req, res, next) => {
+const getAllUsers = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const pageSize = parseInt(req.query.page_size) || 10;
@@ -162,7 +168,7 @@ module.exports.getAllUsers = async (req, res, next) => {
     }
 }
 
-module.exports.deleteUserById = async (req, res, next) => {
+const deleteUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -176,7 +182,7 @@ module.exports.deleteUserById = async (req, res, next) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        const result = await userService.softDeleteUser(id);
+        await userService.softDeleteUser(id);
 
         return res.status(200).json({ message: "user deleted successfully" })
 
@@ -185,3 +191,59 @@ module.exports.deleteUserById = async (req, res, next) => {
         return res.status(500).json({ message: "Internal server error" })
     }
 }
+
+const updateUserPassword = async (req, res, next) => {
+    try {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const id = req.user.id;
+        const { oldPassword, newPassword } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'User id required' });
+        }
+
+        const user = await userModel.findOne({ _id: id, deletedAt: null }).select('+password');
+
+        if (!user) {
+            return res.status(404).json({ status: 404, success: false, message: 'User not found' });
+        }
+
+        const isPasswordMatch = await user.comparePassword(oldPassword);
+
+        if (!isPasswordMatch) {
+            return res.status(400).json({ status: 400, success: false, message: 'Old password is incorrect' });
+        }
+
+
+        const isSamePassword = await user.comparePassword(newPassword);
+
+        if (isSamePassword) {
+            return res.status(400).json({ status: 400, success: false, message: 'New password cannot be the same as old password' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        return res.status(200).json({ status: 200, success: true, message: "Password updated successfully" });
+
+    } catch (error) {
+        console.error('error: ', error);
+        return res.status(500).json({ message: "Internal server error" })
+    }
+};
+
+module.exports = {
+    registerUser,
+    loginUser,
+    getUserProfile,
+    getUserById,
+    getAllUsers,
+    updateUserById,
+    deleteUserById,
+    updateUserPassword
+};

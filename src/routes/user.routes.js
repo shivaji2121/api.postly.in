@@ -4,11 +4,14 @@ const userController = require('../controllers/user.controller');
 const userValidation = require('../validations/user.validations');
 const middleware = require('../middlewares/auth.middleware')
 
-router.get('/', userValidation.registerValidation, userController.getAllUsers)
 router.post('/register', userValidation.registerValidation, userController.registerUser);
-router.post('/login', userValidation.loginValidation, userController.loginUser)
-router.get('/profile', middleware.isAuthorized, userController.getUserProfile)
-router.get('/:id', middleware.isAuthorized, userController.getUserById)
-router.put('/update', middleware.isAuthorized, userValidation.registerValidation, userController.updateUserById)
-router.delete('/:id', middleware.isAuthorized, userValidation.registerValidation, userController.deleteUserById)
+router.post('/login', userValidation.loginValidation, userController.loginUser);
+router.get('/profile', middleware.isAuthorized, userController.getUserProfile);
+router.put('/update', middleware.isAuthorized, userValidation.updateUserValidation, userController.updateUserById);
+router.patch('/update-password', middleware.isAuthorized, userValidation.changePasswordValidation, userController.updateUserPassword)
+router.get('/:id', middleware.isAuthorized, userController.getUserById);
+router.delete('/:id', middleware.isAuthorized, userValidation.registerValidation, userController.deleteUserById);
+router.get('/', middleware.isAuthorized, userValidation.registerValidation, userController.getAllUsers);
+
+
 module.exports = router;

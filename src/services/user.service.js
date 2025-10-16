@@ -1,15 +1,15 @@
 const userModel = require('../models/user.model');
 const bcrypt = require('bcrypt');
 
-module.exports.updateUserData = async (userId, userData) => {
+const updateUserData = async (userId, userData) => {
     try {
         if (!userId || !userData) {
             throw new Error("User ID & data are required")
         }
 
-        if (userData.password) {
-            userData.password = await bcrypt.hash(userData.password, 10);
-        }
+        // if (userData.password) {
+        //     userData.password = await bcrypt.hash(userData.password, 10);
+        // }
 
         const updatedUser = await userModel.findByIdAndUpdate(userId, userData, { new: true, runValidators: true });
 
@@ -24,7 +24,7 @@ module.exports.updateUserData = async (userId, userData) => {
     }
 }
 
-module.exports.getRecords = async (filter, sort, skip, pageSize) => {
+const getRecords = async (filter, sort, skip, pageSize) => {
     const userRecords = await userModel.find(filter).select('-posts -comments').sort(sort).skip(skip).limit(pageSize).lean();
 
     const totalRecords = await userModel.countDocuments(filter);
@@ -34,7 +34,7 @@ module.exports.getRecords = async (filter, sort, skip, pageSize) => {
 
 
 
-module.exports.softDeleteUser = async (userId) => {
+const softDeleteUser = async (userId) => {
     try {
 
         if (!userId) {
@@ -49,3 +49,9 @@ module.exports.softDeleteUser = async (userId) => {
         throw error;
     }
 }
+
+module.exports = {
+    updateUserData,
+    getRecords,
+    softDeleteUser
+};
