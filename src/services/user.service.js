@@ -23,3 +23,12 @@ module.exports.updateUserData = async (userId, userData) => {
         throw error;
     }
 }
+
+module.exports.getRecords = async (filter, sort, skip, pageSize) => {
+    const userRecords = await userModel.find(filter).sort(sort).skip(skip).limit(pageSize).lean();
+
+    const totalRecords = await userModel.countDocuments(filter);
+
+    return { userRecords, totalRecords }
+};
+

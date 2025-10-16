@@ -4,6 +4,7 @@ const userController = require('../controllers/user.controller');
 const userValidation = require('../validations/user.validations');
 const middleware = require('../middlewares/auth.middleware')
 
+router.get('/', userValidation.registerValidation, userController.getAllUsers)
 router.post('/register', userValidation.registerValidation, userController.registerUser);
 router.post('/login', userValidation.loginValidation, userController.loginUser)
 router.get('/profile', middleware.isAuthorized, userController.getUserProfile)
