@@ -2,6 +2,8 @@ const { validationResult } = require('express-validator');
 const userModel = require('../models/user.model');
 const userService = require('../services/user.service');
 const paginationService = require('../helpers/pagination.helper');
+const fs = require('fs');
+const path = require('path');
 
 
 const registerUser = async (req, res, next) => {
@@ -237,6 +239,129 @@ const updateUserPassword = async (req, res, next) => {
     }
 };
 
+
+const uploadProfile = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Get user ID from authenticated request
+        const userId = req.user._id;
+
+        // Find user and delete old profile image if exists
+        const user = await userModel.findById(userId);
+
+        if (user && user.profileImage) {
+            const filename = user.profileImage.split('/').pop();
+            const oldFilePath = path.join('uploads/profiles', filename);
+            if (fs.existsSync(oldFilePath)) {
+                fs.unlink(oldFilePath, (err) => {
+                    if (err) console.error('Error deleting old file:', err);
+                });
+            }
+        }
+
+        // Update user's profile image
+        const filepath = `/uploads/profiles/${req.file.filename}`;
+
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            {
+                profileImage: filepath
+            },
+            { new: true }
+        );
+
+        res.json({
+            message: 'Profile picture uploaded successfully',
+            data: {
+                filename: req.file.filename,
+                filepath: filepath,
+                size: req.file.size,
+                mimetype: req.file.mimetype,
+                user: {
+                    id: updatedUser._id,
+                    username: updatedUser.username,
+                    profileImage: updatedUser.profileImage
+                }
+            }
+        });
+    } catch (error) {
+        console.error('error: ', error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+const deleteProfile = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+
+        const user = await userModel.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if profile image exists
+        if (!user.profileImage) {
+            return res.status(200).json({
+                message: 'No profile picture to delete',
+                user: {
+                    id: user._id,
+                    username: user.username,
+                    profileImage: user.profileImage
+                }
+            });
+        }
+
+
+        const filename = user.profileImage.split('/').pop();
+
+        // Create filepath - go up 2 levels from controllers to src, then to uploads
+        const filepath = path.join(__dirname, '../../uploads/profiles', filename);
+
+
+        // Validate path to prevent directory traversal attacks
+        const uploadsDir = path.normalize(path.join(__dirname, '../../uploads/profiles'));
+        const normalizedFilepath = path.normalize(filepath);
+
+        if (!normalizedFilepath.startsWith(uploadsDir)) {
+            return res.status(400).json({ error: 'Invalid filename' });
+        }
+
+        let fileExists = false;
+        try {
+            await fs.access(filepath);
+            fileExists = true;
+        } catch (err) {
+            fileExists = false;
+        }
+
+        // Delete file from filesystem if it exists
+        if (fileExists) {
+            try {
+                await fs.unlink(filepath);
+            } catch (err) {
+                console.error('Error deleting file:', err);
+                // Log but continue - we'll still update database
+            }
+        }
+
+
+        const updatedUser = await userModel.findByIdAndUpdate(userId, { profileImage: null }, { new: true });
+
+        res.json({
+            message: 'Profile picture deleted successfully',
+            user: { id: updatedUser._id, username: updatedUser.username, profileImage: updatedUser.profileImage }
+        });
+
+    } catch (error) {
+        console.error('Error in deleteProfile:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
@@ -245,5 +370,7 @@ module.exports = {
     getAllUsers,
     updateUserById,
     deleteUserById,
-    updateUserPassword
+    updateUserPassword,
+    uploadProfile,
+    deleteProfile
 };

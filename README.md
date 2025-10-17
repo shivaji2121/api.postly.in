@@ -1,5 +1,3 @@
-// Change Password
-router.post('/change-password', middleware.isAuthorized, userValidation.changePasswordValidation, userController.changePassword);
 
 // Forgot Password
 router.post('/forgot-password', userController.forgotPassword);
