@@ -27,3 +27,15 @@ module.exports.createPost = async (userId, title, content, image) => {
         throw error;
     }
 }
+
+module.exports.getAllPosts = async (filter, sort, skip, pageSize) => {
+    try {
+        const records = await postModel.find(filter).select('-likes -comments').sort(sort).skip(skip).limit(pageSize);
+
+        const totalRecords = await postModel.countDocuments(filter);
+
+        return { records, totalRecords };
+    } catch (error) {
+        throw error;
+    }
+}

@@ -6,6 +6,7 @@ const postValidations = require('../validations/posts.validations');
 
 postRouter.post('/create', authMiddleware.isAuthorized, postValidations.validateCreatePost, postController.createPost)
 postRouter.get('/:id', authMiddleware.isAuthorized, postController.getPostById)
+postRouter.get('/', authMiddleware.isAuthorized, postController.getAllPosts)
 
 
 

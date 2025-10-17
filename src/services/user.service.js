@@ -25,7 +25,7 @@ const updateUserData = async (userId, userData) => {
 }
 
 const getRecords = async (filter, sort, skip, pageSize) => {
-    const userRecords = await userModel.find(filter).select('-posts -comments').sort(sort).skip(skip).limit(pageSize).lean();
+    const userRecords = await userModel.find(filter).select('-posts -comments').sort(sort).skip(skip).limit(pageSize);
 
     const totalRecords = await userModel.countDocuments(filter);
 
