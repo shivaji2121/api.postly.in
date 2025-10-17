@@ -5,6 +5,7 @@ require('dotenv').config();
 const connectToDb = require('./src/config/databaseConfiguration');
 const cookieParser = require('cookie-parser');
 const userRouter = require('./src/routes/user.routes');
+const postRouter = require('./src/routes/post.routes');
 const errorHandler = require('./src/middlewares/errorHandler');
 
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/user', userRouter);
+app.use('/post', postRouter)
 
 
 app.use(errorHandler);

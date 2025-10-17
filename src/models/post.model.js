@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+const userModel = require('./user.model');
 
 const postSchema = new mongoose.Schema({
     user: {
@@ -26,17 +26,30 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
+    likesCount: {
+        type: Number,
+        default: 0
+    },
     comments: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
-    }]
+    }],
+    commentsCount: {
+        type: Number,
+        default: 0
+    }
 }, { timestamps: true });
 
-postSchema.pre('findByIdAndRemove', async function (next) {
-    await userModel.updateOne({ _id: this.user }, { $pull: { posts: this._id } });
+
+postSchema.pre('findByIdAndDelete', async function (next) {
+    const post = await this.model.findById(this._id);
+
+    if (post) {
+        await userModel.updateOne({ _id: post.user }, { $pull: { posts: post._id }, $inc: { postsCount: -1 } });
+    }
+
     next();
 });
 
 const postModel = mongoose.model('Posts', postSchema);
-
 module.exports = postModel;

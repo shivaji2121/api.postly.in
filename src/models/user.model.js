@@ -54,6 +54,14 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    postsCount: {
+        type: Number,
+        default: 0
+    },
+    commentsCount: {
+        type: Number,
+        default: 0
+    },
 
 },
     { timestamps: true }
