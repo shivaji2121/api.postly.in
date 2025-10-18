@@ -73,3 +73,35 @@ module.exports.getAllPosts = async (req, res, next) => {
         return res.status(500).json({ message: error.message });
     }
 }
+
+
+module.exports.updatePost = async (req, res, next) => {
+    try {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        }
+
+        const postId = req.params.id;
+        const { title, content, image } = req.body;
+
+
+        if (!postId) {
+            return res.status(400).json({ message: "Post ID is required" });
+        }
+
+        const isPostExist = await postModel.findById(postId);
+
+        if (!isPostExist) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        const result = await postService.updatePostById(postId, title, content, image);
+
+        return res.status(200).json({ message: 'Post updated successfully', result });
+    } catch (error) {
+        console.error('Error at updating posts:', error);
+        return res.status(500).json({ message: error.message });
+    }
+}

@@ -39,3 +39,18 @@ module.exports.getAllPosts = async (filter, sort, skip, pageSize) => {
         throw error;
     }
 }
+
+module.exports.updatePostById = async (postId, title, content, image) => {
+    try {
+
+        if (!postId || !title || !content) {
+            throw new Error("User ID & post data are required")
+        }
+
+        const result = await postModel.findByIdAndUpdate(postId, { title, content, image: image || "" }, { new: true }).select('-likes -comments')
+
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
