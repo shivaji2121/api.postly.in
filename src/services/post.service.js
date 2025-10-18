@@ -30,7 +30,7 @@ module.exports.createPost = async (userId, title, content, image) => {
 
 module.exports.getAllPosts = async (filter, sort, skip, pageSize) => {
     try {
-        const records = await postModel.find(filter).select('-likes -comments').sort(sort).skip(skip).limit(pageSize);
+        const records = await postModel.find(filter).select('-likes -comments').sort(sort).skip(skip).limit(pageSize).populate('user', 'username');
 
         const totalRecords = await postModel.countDocuments(filter);
 

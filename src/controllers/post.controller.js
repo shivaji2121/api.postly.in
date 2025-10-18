@@ -1,7 +1,8 @@
 const { validationResult } = require('express-validator');
 const postService = require('../services/post.service');
 const postModel = require('../models/post.model');
-const paginationService = require('../helpers/pagination.helper')
+const userModel = require('../models/user.model');
+const paginationService = require('../helpers/pagination.helper');
 
 
 module.exports.createPost = async (req, res, next) => {
@@ -14,6 +15,12 @@ module.exports.createPost = async (req, res, next) => {
 
         const { title, content, image } = req.body;
         const userId = req.user._id;
+
+        const isPostExist = await postModel.findOne({ title, deletedAt: null });
+
+        if (isPostExist) {
+            return res.status(404).json({ message: "Post already exist with title" });
+        }
 
         const result = await postService.createPost(userId, title, content, image)
 
@@ -84,6 +91,7 @@ module.exports.updatePost = async (req, res, next) => {
         }
 
         const postId = req.params.id;
+        const userId = req.user._id;
         const { title, content, image } = req.body;
 
 
@@ -91,7 +99,8 @@ module.exports.updatePost = async (req, res, next) => {
             return res.status(400).json({ message: "Post ID is required" });
         }
 
-        const isPostExist = await postModel.findOne({ _id: postId, deletedAt: null })
+        const isPostExist = await postModel.findOne({ _id: postId, user: userId, deletedAt: null })
+        console.log('isPostExist: ', isPostExist);
 
         if (!isPostExist) {
             return res.status(404).json({ message: "Post not found" });
@@ -109,17 +118,23 @@ module.exports.updatePost = async (req, res, next) => {
 module.exports.deletePost = async (req, res, next) => {
     try {
         const postId = req.params.id;
-
+        const userId = req.user._id;
         if (!postId) {
             return res.status(400).json({ message: 'Post id required' });
         }
 
-        const post = await postModel.findOne({ _id: postId, deletedAt: null })
+        const post = await postModel.findOne({ _id: postId, user: userId, deletedAt: null })
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        await postModel.findByIdAndUpdate(postId, { deletedAt: new Date() }, { new: true })
+        const updatedPost = await postModel.findByIdAndUpdate(postId, { deletedAt: new Date() }, { new: true })
+
+
+        await userModel.updateOne({ _id: userId }, {
+            $push: { posts: updatedPost._id },
+            $inc: { postsCount: -1 }
+        })
 
         return res.json({ message: 'Post deleted successfully' })
 
@@ -128,3 +143,4 @@ module.exports.deletePost = async (req, res, next) => {
         return res.status(500).json({ message: error.message });
     }
 }
+
