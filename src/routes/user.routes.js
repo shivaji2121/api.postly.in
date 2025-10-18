@@ -11,6 +11,7 @@ router.post('/login', userValidation.loginValidation, userController.loginUser);
 router.get('/profile', middleware.isAuthorized, userController.getUserProfile);
 router.put('/update', middleware.isAuthorized, userValidation.updateUserValidation, userController.updateUserById);
 router.patch('/update-password', middleware.isAuthorized, userValidation.changePasswordValidation, userController.updateUserPassword);
+router.get('/posts', middleware.isAuthorized, userController.getAllUserPosts);
 
 router.post('/upload', middleware.isAuthorized, upload.single('profilePicture'), userController.uploadProfile);
 router.delete('/delete-profile', middleware.isAuthorized, userController.deleteProfile);

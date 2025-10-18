@@ -4,6 +4,7 @@ const userService = require('../services/user.service');
 const paginationService = require('../helpers/pagination.helper');
 const fs = require('fs');
 const path = require('path');
+const postModel = require('../models/post.model');
 
 
 const registerUser = async (req, res, next) => {
@@ -362,6 +363,37 @@ const deleteProfile = async (req, res, next) => {
     }
 };
 
+const getAllUserPosts = async (req, res, next) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.page_size) || 10;
+        const search = req.query.search || '';
+        const sort = req.query.sort || '-createdAt';
+        const userId = req.user._id;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User Id required" })
+        };
+
+        const filter = { user: userId, deletedAt: null };
+
+        if (search) {
+            filter.title = { $regex: search, $options: 'i' };
+        }
+
+        const skip = (page - 1) * pageSize;
+
+        const { userPostRecords, totalRecords } = await userService.getAllUserPosts(filter, sort, skip, pageSize)
+
+        const paginationInfo = await paginationService.getPaginationData(page, pageSize, totalRecords)
+
+        return res.json({ message: 'User posts fetched successfully', paginationInfo, userPostRecords })
+    } catch (error) {
+        console.error('Error in getAllUserPosts:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 module.exports = {
     registerUser,
     loginUser,
@@ -372,5 +404,6 @@ module.exports = {
     deleteUserById,
     updateUserPassword,
     uploadProfile,
-    deleteProfile
+    deleteProfile,
+    getAllUserPosts
 };

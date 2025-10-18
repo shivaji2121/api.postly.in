@@ -1,3 +1,4 @@
+const postModel = require('../models/post.model');
 const userModel = require('../models/user.model');
 const bcrypt = require('bcrypt');
 
@@ -50,8 +51,20 @@ const softDeleteUser = async (userId) => {
     }
 }
 
+const getAllUserPosts = async (filter, sort, skip, pageSize) => {
+    try {
+        const userPostRecords = await postModel.find(filter).select('-comments -likes').sort(sort).skip(skip).limit(pageSize).populate('user', 'username email profileImage');
+        const totalRecords = await postModel.countDocuments(filter);
+        return { userPostRecords, totalRecords };
+    } catch (error) {
+        console.error('user service getAllUserPosts : ', error);
+        throw error;
+    }
+}
+
 module.exports = {
     updateUserData,
     getRecords,
-    softDeleteUser
+    softDeleteUser,
+    getAllUserPosts
 };
