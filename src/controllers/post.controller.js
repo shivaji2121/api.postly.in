@@ -145,3 +145,67 @@ module.exports.deletePost = async (req, res, next) => {
     }
 }
 
+module.exports.likePost = async (req, res, next) => {
+    try {
+        const postId = req.params.id;
+        const userId = req.user._id;
+
+        if (!postId) {
+            return res.status(400).json({ message: 'Post id required' });
+        }
+
+        const post = await postModel.findOne({ _id: postId, deletedAt: null });
+
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const likedBefore = await postModel.findOne({ likes: userId })
+
+        if (likedBefore) {
+            return res.status(400).json({ success: false, message: 'You have already liked this post' })
+        }
+
+        const updatePost = await postModel.findByIdAndUpdate(postId, {
+            $push: { likes: userId },
+            $inc: { likesCount: 1 }
+        }, { new: true }).select('_id title likesCount');
+
+
+        return res.json({ success: true, message: 'Post liked successfully', data: updatePost });
+
+    } catch (error) {
+        console.error('Error at like post:', error);
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+
+module.exports.unLikePost = async (req, res, next) => {
+    try {
+        const postId = req.params.id;
+        const userId = req.user._id;
+
+        if (!postId) {
+            return res.status(400).json({ message: 'Post id required' });
+        }
+
+        const post = await postModel.findOne({ _id: postId, likes: userId, deletedAt: null });
+
+        if (!post) {
+            return res.status(400).json({ success: false, message: 'You have not liked this post yet' });
+        }
+
+        const updatePost = await postModel.findByIdAndUpdate(postId, {
+            $pull: { likes: userId },
+            $inc: { likesCount: -1 }
+        }, { new: true }).select('_id title likesCount');
+
+
+        return res.json({ success: true, message: 'Post un-liked successfully', data: updatePost });
+
+    } catch (error) {
+        console.error('Error at un-like post:', error);
+        return res.status(500).json({ message: error.message });
+    }
+}
