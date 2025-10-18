@@ -33,7 +33,7 @@ module.exports.getPostById = async (req, res, next) => {
             return res.status(400).json({ message: "Post ID is required" });
         }
 
-        const post = await postModel.findById(postId).select('-likes -comments')
+        const post = await postModel.findOne({ _id: postId, deletedAt: null }).select('-likes -comments')
 
 
         if (!post) {
@@ -91,7 +91,7 @@ module.exports.updatePost = async (req, res, next) => {
             return res.status(400).json({ message: "Post ID is required" });
         }
 
-        const isPostExist = await postModel.findById(postId);
+        const isPostExist = await postModel.findOne({ _id: postId, deletedAt: null })
 
         if (!isPostExist) {
             return res.status(404).json({ message: "Post not found" });
@@ -100,6 +100,29 @@ module.exports.updatePost = async (req, res, next) => {
         const result = await postService.updatePostById(postId, title, content, image);
 
         return res.status(200).json({ message: 'Post updated successfully', result });
+    } catch (error) {
+        console.error('Error at updating posts:', error);
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+module.exports.deletePost = async (req, res, next) => {
+    try {
+        const postId = req.params.id;
+
+        if (!postId) {
+            return res.status(400).json({ message: 'Post id required' });
+        }
+
+        const post = await postModel.findOne({ _id: postId, deletedAt: null })
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        await postModel.findByIdAndUpdate(postId, { deletedAt: new Date() }, { new: true })
+
+        return res.json({ message: 'Post deleted successfully' })
+
     } catch (error) {
         console.error('Error at updating posts:', error);
         return res.status(500).json({ message: error.message });
