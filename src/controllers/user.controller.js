@@ -5,6 +5,7 @@ const paginationService = require('../helpers/pagination.helper');
 const fs = require('fs');
 const path = require('path');
 const postModel = require('../models/post.model');
+const commentModel = require('../models/comment.model');
 
 
 const registerUser = async (req, res, next) => {
@@ -394,6 +395,50 @@ const getAllUserPosts = async (req, res, next) => {
     }
 }
 
+const getAllUserPostsComments = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.page_size) || 10;
+        const search = req.query.search || '';
+        const sort = req.query.sort || '-createdAt';
+
+        if (!userId) {
+            return res.status(400).json({ message: "User Id required" });
+        }
+
+
+        const { userRecords, totalRecords } = await userService.getAllUserPostsComments(userId, page, pageSize, search, sort);
+
+        if (!userRecords) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const paginationInfo = await paginationService.getPaginationData(page, pageSize, totalRecords);
+
+        return res.json({
+            message: 'User posts and comments fetched successfully',
+            paginationInfo,
+            // user: {
+            //     _id: userRecords._id,
+            //     username: userRecords.username,
+            //     email: userRecords.email,
+            //     profileImage: userRecords.profileImage,
+            //     bio: userRecords.bio,
+            //     postsCount: userRecords.postsCount,
+            //     commentsCount: userRecords.commentsCount
+            // },
+            posts: userRecords.posts,
+            comments: userRecords.comments
+        });
+
+    } catch (error) {
+        console.error('Error in getAllUserPostsComments:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
 module.exports = {
     registerUser,
     loginUser,
@@ -405,5 +450,6 @@ module.exports = {
     updateUserPassword,
     uploadProfile,
     deleteProfile,
-    getAllUserPosts
+    getAllUserPosts,
+    getAllUserPostsComments
 };

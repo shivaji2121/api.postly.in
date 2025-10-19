@@ -62,9 +62,76 @@ const getAllUserPosts = async (filter, sort, skip, pageSize) => {
     }
 }
 
+
+const getAllUserPostsComments = async (userId, page, pageSize, search, sort) => {
+    try {
+        const skip = (page - 1) * pageSize;
+
+        // Populate 'posts' and 'comments'
+        const userRecords = await userModel
+            .findOne({ _id: userId, deletedAt: null })
+            .populate({
+                path: 'posts',
+                select: 'title content image likesCount commentsCount createdAt',
+                match: {
+                    deletedAt: null,
+                    ...(search && { title: { $regex: search, $options: 'i' } })
+                },
+                options: {
+                    sort: sort,
+                    limit: pageSize,
+                    skip: skip
+                },
+                // populate: {
+                //     path: 'user',
+                //     select: 'username email profileImage'
+                // }
+            })
+            .populate({
+                path: 'comments',
+                select: 'text post createdAt',
+                match: { deletedAt: null },
+                options: {
+                    sort: sort,
+                    limit: pageSize,
+                    skip: skip
+                },
+                populate: [
+                    // {
+                    //     path: 'user',
+                    //     select: 'username email profileImage'
+                    // },
+                    {
+                        path: 'post',
+                        select: 'title content'
+                    }
+                ]
+            });
+
+        if (!userRecords) {
+            return null;
+        }
+
+        const totalPosts = userRecords.posts?.length || 0;
+        const totalComments = userRecords.comments?.length || 0;
+        const totalRecords = totalPosts + totalComments;
+
+        return {
+            userRecords,
+            totalRecords,
+            totalPosts,
+            totalComments
+        };
+
+    } catch (error) {
+        throw error;
+    }
+};
+
 module.exports = {
     updateUserData,
     getRecords,
     softDeleteUser,
-    getAllUserPosts
+    getAllUserPosts,
+    getAllUserPostsComments
 };
