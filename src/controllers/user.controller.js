@@ -419,15 +419,6 @@ const getAllUserPostsComments = async (req, res, next) => {
         return res.json({
             message: 'User posts and comments fetched successfully',
             paginationInfo,
-            // user: {
-            //     _id: userRecords._id,
-            //     username: userRecords.username,
-            //     email: userRecords.email,
-            //     profileImage: userRecords.profileImage,
-            //     bio: userRecords.bio,
-            //     postsCount: userRecords.postsCount,
-            //     commentsCount: userRecords.commentsCount
-            // },
             posts: userRecords.posts,
             comments: userRecords.comments
         });
