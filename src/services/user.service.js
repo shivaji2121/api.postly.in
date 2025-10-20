@@ -63,11 +63,76 @@ const getAllUserPosts = async (filter, sort, skip, pageSize) => {
 }
 
 
+// const getAllUserPostsComments = async (userId, page, pageSize, search, sort) => {
+//     try {
+//         const skip = (page - 1) * pageSize;
+
+//         // Populate 'posts' and 'comments'
+//         const userRecords = await userModel
+//             .findOne({ _id: userId, deletedAt: null })
+//             .populate({
+//                 path: 'posts',
+//                 select: 'title content image likesCount commentsCount createdAt',
+//                 match: {
+//                     deletedAt: null,
+//                     ...(search && { title: { $regex: search, $options: 'i' } })
+//                 },
+//                 options: {
+//                     sort: sort,
+//                     limit: pageSize,
+//                     skip: skip
+//                 },
+//                 // populate: {
+//                 //     path: 'user',
+//                 //     select: 'username email profileImage'
+//                 // }
+//             })
+//             .populate({
+//                 path: 'comments',
+//                 select: 'text post createdAt',
+//                 match: { deletedAt: null },
+//                 options: {
+//                     sort: sort,
+//                     limit: pageSize,
+//                     skip: skip
+//                 },
+//                 populate: [
+//                     // {
+//                     //     path: 'user',
+//                     //     select: 'username email profileImage'
+//                     // },
+//                     {
+//                         path: 'post',
+//                         select: 'title content'
+//                     }
+//                 ]
+//             });
+
+//         if (!userRecords) {
+//             return null;
+//         }
+
+//         const totalPosts = userRecords.posts?.length || 0;
+//         const totalComments = userRecords.comments?.length || 0;
+//         const totalRecords = totalPosts + totalComments;
+
+//         return {
+//             userRecords,
+//             totalRecords,
+//             totalPosts,
+//             totalComments
+//         };
+
+//     } catch (error) {
+//         throw error;
+//     }
+// };
+
 const getAllUserPostsComments = async (userId, page, pageSize, search, sort) => {
     try {
         const skip = (page - 1) * pageSize;
 
-        // Populate 'posts' and 'comments'
+        // Get user with posts and comments
         const userRecords = await userModel
             .findOne({ _id: userId, deletedAt: null })
             .populate({
@@ -78,49 +143,41 @@ const getAllUserPostsComments = async (userId, page, pageSize, search, sort) => 
                     ...(search && { title: { $regex: search, $options: 'i' } })
                 },
                 options: {
-                    sort: sort,
-                    limit: pageSize,
-                    skip: skip
-                },
-                // populate: {
-                //     path: 'user',
-                //     select: 'username email profileImage'
-                // }
+                    sort: sort
+                }
             })
             .populate({
                 path: 'comments',
                 select: 'text post createdAt',
                 match: { deletedAt: null },
                 options: {
-                    sort: sort,
-                    limit: pageSize,
-                    skip: skip
+                    sort: sort
                 },
-                populate: [
-                    // {
-                    //     path: 'user',
-                    //     select: 'username email profileImage'
-                    // },
-                    {
-                        path: 'post',
-                        select: 'title content'
-                    }
-                ]
+                populate: {
+                    path: 'post',
+                    select: 'title content'
+                }
             });
 
         if (!userRecords) {
             return null;
         }
 
-        const totalPosts = userRecords.posts?.length || 0;
-        const totalComments = userRecords.comments?.length || 0;
-        const totalRecords = totalPosts + totalComments;
+        // Map comments to their respective posts
+        const postsWithComments = userRecords.posts.map(post => ({
+            ...post.toObject(),
+            comments: userRecords.comments.filter(
+                comment => comment.post._id.toString() === post._id.toString()
+            )
+        }));
+
+        // Apply pagination
+        const paginatedData = postsWithComments.slice(skip, skip + pageSize);
+        const totalRecords = postsWithComments.length;
 
         return {
-            userRecords,
-            totalRecords,
-            totalPosts,
-            totalComments
+            data: paginatedData,
+            totalRecords
         };
 
     } catch (error) {

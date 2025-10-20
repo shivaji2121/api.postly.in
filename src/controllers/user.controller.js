@@ -408,9 +408,15 @@ const getAllUserPostsComments = async (req, res, next) => {
         }
 
 
-        const { userRecords, totalRecords } = await userService.getAllUserPostsComments(userId, page, pageSize, search, sort);
+        const { data, totalRecords } = await userService.getAllUserPostsComments(
+            userId,
+            page,
+            pageSize,
+            search,
+            sort
+        );
 
-        if (!userRecords) {
+        if (!data) {
             return res.status(404).json({ message: 'User not found' });
         }
 
@@ -419,8 +425,7 @@ const getAllUserPostsComments = async (req, res, next) => {
         return res.json({
             message: 'User posts and comments fetched successfully',
             paginationInfo,
-            posts: userRecords.posts,
-            comments: userRecords.comments
+            data: data
         });
 
     } catch (error) {
