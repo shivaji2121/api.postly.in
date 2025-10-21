@@ -20,6 +20,10 @@ const commentSchema = new mongoose.Schema(
             trim: true,
             maxLength: 200,
         },
+        deletedAt: {
+            type: Date,
+            default: null,
+        },
     },
     { timestamps: true }
 );
